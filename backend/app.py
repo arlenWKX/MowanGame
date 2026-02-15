@@ -18,9 +18,6 @@ from flask import Flask, request, jsonify, g, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room, rooms
 from flask_cors import CORS
 import sqlite3
-from gevent import monkey
-monkey.patch_all()
-import gevent
 
 # 初始化Flask应用
 app = Flask(__name__, static_folder='../frontend')
@@ -29,7 +26,7 @@ app.config['DATABASE'] = os.path.join(os.path.dirname(__file__), 'game.db')
 
 # 配置CORS和SocketIO
 CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='gevent', ping_timeout=60, ping_interval=25)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading', ping_timeout=60, ping_interval=25)
 
 # ==================== 数据库操作 ====================
 
@@ -957,7 +954,7 @@ def process_duel(game, room_id):
         }, room=room_id)
         
         # 添加延迟以便前端显示动画
-        gevent.sleep(1.5)
+        time.sleep(1.5)
         
         if winner is None:
             # 同归于尽
