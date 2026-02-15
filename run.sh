@@ -9,7 +9,7 @@ echo "======================================"
 echo "     魔丸小游戏服务器启动中..."
 echo "======================================"
 
-cd /home/z/my-project/game/backend
+cd ./backend
 
 # 检查虚拟环境
 if [ ! -d "venv" ]; then
