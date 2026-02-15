@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔丸小游戏</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #0ea5e9;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 头部导航 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--gray-800);
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* 输入框样式 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* 登录/注册页面 */
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-subtitle {
+            text-align: center;
+            color: var(--gray-500);
+            margin-bottom: 32px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--gray-100);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray-500);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--gray-500);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* 大厅页面 */
+        .lobby-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .lobby-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .create-room-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .player-count-selector {
+            display: flex;
+            gap: 8px;
+        }
+
+        .player-count-option {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .player-count-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        /* 房间页面 */
+        .room-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .room-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .room-id-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+        }
+
+        .players-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+        }
+
+        .player-item.current {
+            background: rgba(99, 102, 241, 0.1);
+            border: 2px solid var(--primary);
+        }
+
+        .player-item.eliminated {
+            opacity: 0.5;
+            background: var(--gray-100);
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .player-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .player-badge.creator {
+            background: var(--warning);
+            color: white;
+        }
+
+        .player-badge.you {
+            background: var(--success);
+            color: white;
+        }
+
+        /* 游戏棋盘 */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            background: var(--gray-200);
+            padding: 8px;
+            border-radius: var(--radius);
+            aspect-ratio: 2;
+        }
+
+        .board-cell {
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .board-cell:hover {
+            background: var(--gray-50);
+        }
+
+        .board-cell.selected {
+            background: rgba(99, 102, 241, 0.2);
+            box-shadow: inset 0 0 0 2px var(--primary);
+        }
+
+        .board-cell.can-move {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .board-cell.occupied {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+        }
+
+        .board-cell.empty {
+            color: var(--gray-300);
+        }
+
+        .board-cell .number {
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 600px) {
+            .board-cell {
+                font-size: 1rem;
+            }
+            .board-cell .number {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* 数字选择器 */
+        .number-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .number-chip {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid var(--gray-200);
+            background: white;
+        }
+
+        .number-chip:hover {
+            border-color: var(--primary);
+        }
+
+        .number-chip.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .number-chip.used {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* 公共区域 */
+        .public-area {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: var(--radius);
+            padding: 16px;
+            min-height: 100px;
+        }
+
+        .public-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .public-piece {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            position: relative;
+        }
+
+        .public-piece .owner {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--gray-700);
+            color: white;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 排行榜 */
+        .leaderboard {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--gray-100);
+            transition: all 0.2s;
+        }
+
+        .leaderboard-item:hover {
+            background: var(--gray-50);
+        }
+
+        .leaderboard-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+
+        .leaderboard-rank.gold {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+        }
+
+        .leaderboard-rank.silver {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            color: white;
+        }
+
+        .leaderboard-rank.bronze {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            color: white;
+        }
+
+        .leaderboard-rank.normal {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .leaderboard-info {
+            flex: 1;
+        }
+
+        .leaderboard-name {
+            font-weight: 600;
+        }
+
+        .leaderboard-stats {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+
+        .leaderboard-winrate {
+            text-align: right;
+        }
+
+        .winrate-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        /* 消息提示 */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gray-800);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        /* 对决动画 */
+        .duel-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .duel-pieces {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .duel-piece {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .duel-vs {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .duel-result {
+            margin-top: 24px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* 游戏结束 */
+        .game-end-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .winner-display {
+            text-align: center;
+            color: white;
+        }
+
+        .winner-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .winner-name {
+            font-size: 2rem;
+            margin-bottom: 32px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 连接状态 */
+        .connection-status {
+            position: fixed;
+            top: 70px;
+            right: 24px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 99;
+        }
+
+        .connection-status.connected {
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+
+        .connection-status.reconnecting {
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+        }
+
+        /* 回合指示器 */
+        .turn-indicator {
+            background: linear-gradient(135deg, var(--success), #16a34a);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .turn-indicator.your-turn {
+            animation: glow 1s ease infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px var(--success); }
+            to { box-shadow: 0 0 20px var(--success); }
+        }
+
+        /* 行动按钮组 */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        /* 淘汰区 */
+        .eliminated-area {
+            background: var(--gray-100);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-top: 12px;
+        }
+
+        .eliminated-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .eliminated-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            text-decoration: line-through;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .header {
+                padding: 10px 16px;
+            }
+            
+            .main-content {
+                padding: 16px;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+            
+            .auth-card {
+                padding: 24px;
+            }
+            
+            .auth-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* 过渡动画 */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .slide-enter-active, .slide-leave-active {
+            transition: all 0.3s ease;
+        }
+        .slide-enter-from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .slide-leave-to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 连接状态 -->
+        <div v-if="isAuthenticated" 
+             class="connection-status" 
+             :class="connectionStatus">
+            {{ connectionStatusText }}
+        </div>
+
+        <!-- 未认证：登录/注册页面 -->
+        <div v-if="!isAuthenticated" class="auth-container">
+            <div class="auth-card">
+                <h1 class="auth-title">魔丸小游戏</h1>
+                <p class="auth-subtitle">策略推理类棋类游戏</p>
+                
+                <div class="auth-tabs">
+                    <div class="auth-tab" :class="{ active: authTab === 'login' }" @click="authTab = 'login'">登录</div>
+                    <div class="auth-tab" :class="{ active: authTab === 'register' }" @click="authTab = 'register'">注册</div>
+                </div>
+                
+                <!-- 登录表单 -->
+                <form v-if="authTab === 'login'" @submit.prevent="login">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-input" v-model="loginForm.username" placeholder="请输入用户名" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-input" v-model="loginForm.password" placeholder="请输入密码" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg" style="width: 100%" :disabled="loading">
+                        {{ loading ? '登录中...' : '登录' }}
+                    </button>
+                </form>
+                
+                <!-- 注册表单 -->
+                <form v-else @submit.prevent="register">
+                    <div class="form-group">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-input" v-model="registerForm.username" placeholder="3-20个字符" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-input" v-model="registerForm.password" placeholder="至少6个字符" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">昵称</label>
+                        <input type="text" class="form-input" v-model="registerForm.nickname" placeholder="游戏内显示的名称" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg" style="width: 100%" :disabled="loading">
+                        {{ loading ? '注册中...' : '注册' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 已认证：主应用 -->
+        <div v-else class="app-container">
+            <!-- 头部 -->
+            <header class="header">
+                <div class="logo" @click="currentPage = 'lobby'" style="cursor: pointer">魔丸小游戏</div>
+                <div class="user-info">
+                    <div class="user-avatar">{{ user?.nickname?.charAt(0) }}</div>
+                    <span class="user-name">{{ user?.nickname }}</span>
+                    <button class="btn btn-secondary btn-sm" @click="logout">退出</button>
+                </div>
+            </header>
+
+            <!-- 主内容 -->
+            <main class="main-content">
+                <!-- 大厅页面 -->
+                <div v-if="currentPage === 'lobby'" class="lobby-grid">
+                    <div>
+                        <!-- 创建房间 -->
+                        <div class="card">
+                            <h2 class="card-title">创建房间</h2>
+                            <div class="create-room-form">
+                                <div class="form-group">
+                                    <label class="form-label">游戏人数</label>
+                                    <div class="player-count-selector">
+                                        <div v-for="n in [3, 4, 5]" :key="n"
+                                             class="player-count-option"
+                                             :class="{ selected: createRoomForm.maxPlayers === n }"
+                                             @click="createRoomForm.maxPlayers = n">
+                                            {{ n }}人
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-lg" @click="createRoom" :disabled="loading">
+                                    {{ loading ? '创建中...' : '创建房间' }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 加入房间 -->
+                        <div class="card">
+                            <h2 class="card-title">加入房间</h2>
+                            <div class="form-group">
+                                <label class="form-label">房间ID</label>
+                                <input type="text" class="form-input" v-model="joinRoomId" 
+                                       placeholder="输入4位房间ID" maxlength="4" 
+                                       style="text-transform: uppercase">
+                            </div>
+                            <button class="btn btn-primary" @click="joinRoom" :disabled="loading || !joinRoomId">
+                                加入房间
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 排行榜 -->
+                    <div class="card">
+                        <h2 class="card-title">🏆 排行榜</h2>
+                        <div v-if="leaderboardLoading" class="loading">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div v-else-if="leaderboard.length === 0" style="text-align: center; color: var(--gray-500); padding: 20px;">
+                            暂无数据
+                        </div>
+                        <div v-else class="leaderboard">
+                            <div v-for="(item, index) in leaderboard" :key="item.id" class="leaderboard-item">
+                                <div class="leaderboard-rank" 
+                                     :class="index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'normal'">
+                                    {{ index + 1 }}
+                                </div>
+                                <div class="leaderboard-info">
+                                    <div class="leaderboard-name">{{ item.nickname }}</div>
+                                    <div class="leaderboard-stats">
+                                        {{ item.total_games }}场 | {{ item.wins }}胜
+                                    </div>
+                                </div>
+                                <div class="leaderboard-winrate">
+                                    <div class="winrate-value">{{ item.win_rate }}%</div>
+                                    <div style="font-size: 0.75rem; color: var(--gray-500)">胜率</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 房间等待页面 -->
+                <div v-else-if="currentPage === 'room' && roomInfo" class="room-container">
+                    <div>
+                        <div class="room-header">
+                            <div>
+                                <span style="color: var(--gray-500)">房间ID：</span>
+                                <span class="room-id-display">{{ roomInfo.id }}</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" @click="leaveRoom">离开房间</button>
+                                <button v-if="roomInfo.creator_id === user?.id && roomInfo.players?.length >= 3" 
+                                        class="btn btn-success" @click="startGame" :disabled="loading">
+                                    开始游戏
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 class="card-title">玩家列表 ({{ roomInfo.players?.length || 0 }}/{{ roomInfo.max_players }})</h3>
+                            <div class="players-list">
+                                <div v-for="player in roomInfo.players" :key="player.user_id" 
+                                     class="player-item" :class="{ current: player.user_id === user?.id }">
+                                    <div class="player-info">
+                                        <div class="user-avatar">{{ player.nickname?.charAt(0) }}</div>
+                                        <div>
+                                            <div style="font-weight: 500">{{ player.nickname }}</div>
+                                            <div style="font-size: 0.85rem; color: var(--gray-500)">
+                                                {{ player.total_games || 0 }}场 | 胜率 {{ player.total_games > 0 ? Math.round((player.wins / player.total_games) * 100) : 0 }}%
+                                            </div>
+                                        </div>
+                                        <span v-if="player.is_creator" class="player-badge creator">房主</span>
+                                        <span v-if="player.user_id === user?.id" class="player-badge you">你</span>
+                                    </div>
+                                    <button v-if="roomInfo.creator_id === user?.id && player.user_id !== user?.id" 
+                                            class="btn btn-danger btn-sm" @click="kickPlayer(player.user_id)">
+                                        踢出
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">游戏规则</h3>
+                        <div style="font-size: 0.9rem; color: var(--gray-600); line-height: 1.6;">
+                            <p><strong>🎯 目标：</strong>成为最后存活的玩家</p>
+                            <p><strong>📋 部署：</strong>将数字0-9放置到棋盘的10个格子中</p>
+                            <p><strong>⚔️ 行动：</strong>前进、单挑、回收或放弃</p>
+                            <p><strong>🏆 对决：</strong>反向排序，0>1>2>...>9</p>
+                            <p><strong>✨ 特殊：</strong>相同数字同归于尽；0与6/9同归于尽；8>0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 游戏页面 -->
+                <div v-else-if="currentPage === 'game' && gameState" class="game-container">
+                    <!-- 回合信息 -->
+                    <div class="turn-indicator" :class="{ 'your-turn': isMyTurn }">
+                        <template v-if="gameState.phase === 'deployment'">
+                            部署阶段 - 请放置您的数字棋子
+                        </template>
+                        <template v-else-if="gameState.phase === 'action'">
+                            第 {{ gameState.round_number }} 回合 - 
+                            <span v-if="isMyTurn">轮到您行动！</span>
+                            <span v-else>等待 {{ currentPlayerNickname }} 行动...</span>
+                        </template>
+                        <template v-else-if="gameState.phase === 'settlement'">
+                            结算阶段...
+                        </template>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 350px; gap: 24px;">
+                        <div>
+                            <!-- 我的棋盘 -->
+                            <div class="card">
+                                <h3 class="card-title">我的棋盘</h3>
+                                <div class="game-board">
+                                    <div v-for="(row, rowIndex) in myBoard" :key="rowIndex" 
+                                         style="display: contents;">
+                                        <div v-for="(cell, colIndex) in row" :key="colIndex"
+                                             class="board-cell"
+                                             :class="{
+                                                 'occupied': cell !== null,
+                                                 'selected': selectedCell?.row === rowIndex && selectedCell?.col === colIndex,
+                                                 'can-move': canMoveTo(rowIndex, colIndex)
+                                             }"
+                                             @click="handleCellClick(rowIndex, colIndex)">
+                                            <span v-if="cell !== null" class="number">{{ cell }}</span>
+                                            <span v-else style="color: var(--gray-300)">{{ rowIndex + 1 }}{{ String.fromCharCode(65 + colIndex) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 部署阶段的数字选择器 -->
+                                <div v-if="gameState.phase === 'deployment'" class="number-selector">
+                                    <div v-for="n in 10" :key="n - 1"
+                                         class="number-chip"
+                                         :class="{ 
+                                             'selected': selectedNumber === n - 1,
+                                             'used': usedNumbers.includes(n - 1)
+                                         }"
+                                         @click="selectNumber(n - 1)">
+                                        {{ n - 1 }}
+                                    </div>
+                                </div>
+
+                                <!-- 行动按钮 -->
+                                <div v-if="gameState.phase === 'action' && isMyTurn" class="action-buttons">
+                                    <button class="btn btn-primary" @click="executeMove" :disabled="!selectedCell">
+                                        前进
+                                    </button>
+                                    <button class="btn btn-secondary" @click="skipAction">
+                                        放弃行动
+                                    </button>
+                                </div>
+
+                                <!-- 部署确认按钮 -->
+                                <div v-if="gameState.phase === 'deployment'" style="margin-top: 16px;">
+                                    <button class="btn btn-success btn-lg" style="width: 100%" 
+                                            @click="confirmDeployment" 
+                                            :disabled="usedNumbers.length !== 10">
+                                        确认部署 ({{ usedNumbers.length }}/10)
+                                    </button>
+                                </div>
+
+                                <!-- 淘汰区 -->
+                                <div v-if="myEliminatedNumbers.length > 0" class="eliminated-area">
+                                    <div style="font-size: 0.85rem; color: var(--gray-500); margin-bottom: 8px;">淘汰区</div>
+                                    <div class="eliminated-numbers">
+                                        <div v-for="n in myEliminatedNumbers" :key="n" class="eliminated-number">
+                                            {{ n }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- 公共区域 -->
+                            <div class="card">
+                                <h3 class="card-title">公共区域</h3>
+                                <div class="public-area">
+                                    <div v-if="gameState.public_area?.length === 0" style="text-align: center; color: var(--gray-500);">
+                                        暂无棋子
+                                    </div>
+                                    <div v-else class="public-pieces">
+                                        <div v-for="(piece, index) in gameState.public_area" :key="index"
+                                             class="public-piece"
+                                             :style="{ background: getPlayerColor(piece.player_id) }">
+                                            {{ piece.number }}
+                                            <span class="owner">{{ getPlayerNickname(piece.player_id)?.charAt(0) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 其他玩家棋盘 -->
+                            <div class="card">
+                                <h3 class="card-title">其他玩家</h3>
+                                <div class="players-list">
+                                    <div v-for="player in otherPlayers" :key="player.id" 
+                                         class="player-item"
+                                         :class="{ eliminated: player.eliminated }">
+                                        <div class="player-info">
+                                            <div class="user-avatar" :style="{ background: getPlayerColor(player.id) }">
+                                                {{ player.nickname?.charAt(0) }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 500">{{ player.nickname }}</div>
+                                                <div v-if="player.eliminated" style="font-size: 0.85rem; color: var(--danger)">
+                                                    已淘汰
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: var(--gray-500)">
+                                            剩余: {{ countPlayerPieces(player) }}枚
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 对决动画 -->
+        <div v-if="duelAnimation" class="duel-animation">
+            <div class="duel-pieces">
+                <div class="duel-piece" :style="{ background: getPlayerColor(duelAnimation.piece1.player_id) }">
+                    {{ duelAnimation.piece1.number }}
+                </div>
+                <div class="duel-vs">VS</div>
+                <div class="duel-piece" :style="{ background: getPlayerColor(duelAnimation.piece2.player_id) }">
+                    {{ duelAnimation.piece2.number }}
+                </div>
+            </div>
+            <div class="duel-result">
+                <template v-if="duelAnimation.winner === null">
+                    同归于尽！
+                </template>
+                <template v-else>
+                    {{ duelAnimation.winner }} 获胜！
+                </template>
+            </div>
+        </div>
+
+        <!-- 游戏结束 -->
+        <div v-if="gameEnded" class="game-end-overlay">
+            <div class="winner-display">
+                <div class="winner-title">🎉 游戏结束 🎉</div>
+                <div class="winner-name">
+                    <span v-if="gameEnded.winner_id === user?.id">恭喜您获得胜利！</span>
+                    <span v-else>{{ gameEnded.winner_nickname }} 获得胜利！</span>
+                </div>
+                <button class="btn btn-primary btn-lg" @click="backToLobby">返回大厅</button>
+            </div>
+        </div>
+
+        <!-- Toast消息 -->
+        <div v-if="toastMessage" class="toast">
+            {{ toastMessage }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch, onMounted, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                // 状态
+                const isAuthenticated = ref(false);
+                const user = ref(null);
+                const token = ref(localStorage.getItem('token'));
+                const authTab = ref('login');
+                const loading = ref(false);
+                const toastMessage = ref('');
+                
+                // 表单
+                const loginForm = ref({ username: '', password: '' });
+                const registerForm = ref({ username: '', password: '', nickname: '' });
+                const createRoomForm = ref({ maxPlayers: 4 });
+                const joinRoomId = ref('');
+                
+                // 页面状态
+                const currentPage = ref('lobby'); // lobby, room, game
+                const roomInfo = ref(null);
+                const gameState = ref(null);
+                
+                // 排行榜
+                const leaderboard = ref([]);
+                const leaderboardLoading = ref(false);
+                
+                // WebSocket
+                const socket = ref(null);
+                const connectionStatus = ref('disconnected');
+                
+                // 游戏状态
+                const selectedCell = ref(null);
+                const selectedNumber = ref(null);
+                const duelAnimation = ref(null);
+                const gameEnded = ref(null);
+                
+                // 从URL获取房间ID
+                const urlRoomId = ref(window.location.pathname.slice(1).toUpperCase());
+                
+                // 计算属性
+                const connectionStatusText = computed(() => {
+                    switch (connectionStatus.value) {
+                        case 'connected': return '已连接';
+                        case 'disconnected': return '已断开';
+                        case 'reconnecting': return '重连中...';
+                        default: return '';
+                    }
+                });
+                
+                const myBoard = computed(() => {
+                    if (!gameState.value || !user.value) return GameLogic.createEmptyBoard();
+                    const player = gameState.value.players.find(p => p.id === user.value.id);
+                    return player?.board || GameLogic.createEmptyBoard();
+                });
+                
+                const usedNumbers = computed(() => {
+                    const used = [];
+                    for (const row of myBoard.value) {
+                        for (const cell of row) {
+                            if (cell !== null) used.push(cell);
+                        }
+                    }
+                    return used;
+                });
+                
+                const myEliminatedNumbers = computed(() => {
+                    if (!gameState.value || !user.value) return [];
+                    const player = gameState.value.players.find(p => p.id === user.value.id);
+                    return player?.eliminated_numbers || [];
+                });
+                
+                const isMyTurn = computed(() => {
+                    if (!gameState.value || !user.value) return false;
+                    const currentPlayer = gameState.value.players[gameState.value.current_player_index];
+                    return currentPlayer?.id === user.value.id;
+                });
+                
+                const currentPlayerNickname = computed(() => {
+                    if (!gameState.value) return '';
+                    const currentPlayer = gameState.value.players[gameState.value.current_player_index];
+                    return currentPlayer?.nickname || '';
+                });
+                
+                const otherPlayers = computed(() => {
+                    if (!gameState.value || !user.value) return [];
+                    return gameState.value.players.filter(p => p.id !== user.value.id);
+                });
+                
+                // 方法
+                const showToast = (message, duration = 3000) => {
+                    toastMessage.value = message;
+                    setTimeout(() => {
+                        toastMessage.value = '';
+                    }, duration);
+                };
+                
+                const api = async (endpoint, options = {}) => {
+                    const headers = {
+                        'Content-Type': 'application/json',
+                    };
+                    if (token.value) {
+                        headers['Authorization'] = `Bearer ${token.value}`;
+                    }
+                    
+                    const response = await fetch(`/api${endpoint}`, {
+                        ...options,
+                        headers: {
+                            ...headers,
+                            ...options.headers,
+                        },
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || '请求失败');
+                    }
+                    
+                    return data;
+                };
+                
+                const login = async () => {
+                    loading.value = true;
+                    try {
+                        const data = await api('/login', {
+                            method: 'POST',
+                            body: JSON.stringify(loginForm.value),
+                        });
+                        token.value = data.token;
+                        user.value = data.user;
+                        localStorage.setItem('token', data.token);
+                        isAuthenticated.value = true;
+                        initSocket();
+                        fetchLeaderboard();
+                        
+                        // 如果URL有房间ID，自动加入
+                        if (urlRoomId.value && urlRoomId.value.length === 4) {
+                            joinRoomId.value = urlRoomId.value;
+                            joinRoom();
+                        }
+                    } catch (error) {
+                        showToast(error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const register = async () => {
+                    loading.value = true;
+                    try {
+                        await api('/register', {
+                            method: 'POST',
+                            body: JSON.stringify(registerForm.value),
+                        });
+                        showToast('注册成功，请登录');
+                        authTab.value = 'login';
+                        loginForm.value.username = registerForm.value.username;
+                    } catch (error) {
+                        showToast(error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const logout = async () => {
+                    try {
+                        await api('/logout', { method: 'POST' });
+                    } catch (e) {}
+                    token.value = null;
+                    user.value = null;
+                    localStorage.removeItem('token');
+                    isAuthenticated.value = false;
+                    if (socket.value) {
+                        socket.value.disconnect();
+                    }
+                    currentPage.value = 'lobby';
+                    roomInfo.value = null;
+                    gameState.value = null;
+                };
+                
+                const checkAuth = async () => {
+                    if (!token.value) return;
+                    
+                    try {
+                        const data = await api('/me');
+                        user.value = data;
+                        isAuthenticated.value = true;
+                        initSocket();
+                        fetchLeaderboard();
+                        
+                        // 如果URL有房间ID，自动加入
+                        if (urlRoomId.value && urlRoomId.value.length === 4) {
+                            joinRoomId.value = urlRoomId.value;
+                            joinRoom();
+                        }
+                    } catch (error) {
+                        token.value = null;
+                        localStorage.removeItem('token');
+                    }
+                };
+                
+                const initSocket = () => {
+                    socket.value = io({
+                        auth: { token: token.value },
+                        transports: ['websocket', 'polling'],
+                        reconnection: true,
+                        reconnectionAttempts: Infinity,
+                        reconnectionDelay: 1000,
+                        reconnectionDelayMax: 5000,
+                    });
+                    
+                    socket.value.on('connect', () => {
+                        connectionStatus.value = 'connected';
+                        socket.value.emit('authenticate', { token: token.value });
+                    });
+                    
+                    socket.value.on('disconnect', () => {
+                        connectionStatus.value = 'disconnected';
+                    });
+                    
+                    socket.value.on('reconnecting', () => {
+                        connectionStatus.value = 'reconnecting';
+                    });
+                    
+                    socket.value.on('authenticated', (data) => {
+                        console.log('Socket authenticated');
+                    });
+                    
+                    socket.value.on('auth_error', (data) => {
+                        showToast('认证失败，请重新登录');
+                        logout();
+                    });
+                    
+                    socket.value.on('player_joined', (data) => {
+                        roomInfo.value = {
+                            ...roomInfo.value,
+                            players: data.players,
+                        };
+                        roomInfo.value = { ...roomInfo.value, ...data.room_info };
+                        showToast(`${data.player.nickname} 加入了房间`);
+                    });
+                    
+                    socket.value.on('player_left', (data) => {
+                        if (roomInfo.value) {
+                            roomInfo.value.players = roomInfo.value.players.filter(p => p.user_id !== data.player_id);
+                        }
+                        showToast(`${data.nickname} 离开了房间`);
+                    });
+                    
+                    socket.value.on('player_kicked', (data) => {
+                        if (roomInfo.value) {
+                            roomInfo.value.players = data.players;
+                        }
+                    });
+                    
+                    socket.value.on('kicked', (data) => {
+                        showToast('您已被踢出房间');
+                        currentPage.value = 'lobby';
+                        roomInfo.value = null;
+                    });
+                    
+                    socket.value.on('game_started', (data) => {
+                        gameState.value = data.game_state;
+                        currentPage.value = 'game';
+                    });
+                    
+                    socket.value.on('deployment_complete', (data) => {
+                        gameState.value = data.game_state;
+                        showToast('所有玩家已完成部署，游戏开始！');
+                    });
+                    
+                    socket.value.on('player_deployed', (data) => {
+                        gameState.value = data.game_state;
+                    });
+                    
+                    socket.value.on('turn_changed', (data) => {
+                        gameState.value = data.game_state;
+                        selectedCell.value = null;
+                    });
+                    
+                    socket.value.on('action_result', (data) => {
+                        if (data.success) {
+                            showToast(data.message);
+                        } else {
+                            showToast(data.message);
+                        }
+                    });
+                    
+                    socket.value.on('settlement_start', (data) => {
+                        gameState.value = data.game_state;
+                    });
+                    
+                    socket.value.on('duel', (data) => {
+                        duelAnimation.value = data;
+                        gameState.value = data.game_state;
+                        
+                        setTimeout(() => {
+                            duelAnimation.value = null;
+                        }, 2000);
+                    });
+                    
+                    socket.value.on('round_start', (data) => {
+                        gameState.value = data.game_state;
+                        showToast(`第 ${data.round_number} 回合开始`);
+                    });
+                    
+                    socket.value.on('extra_action', (data) => {
+                        gameState.value = data.game_state;
+                        if (data.player_id === user.value.id) {
+                            showToast(`您的数字 ${data.number} 在公共区域，获得额外行动！`);
+                        }
+                    });
+                    
+                    socket.value.on('game_ended', (data) => {
+                        gameState.value = data.game_state;
+                        gameEnded.value = data;
+                    });
+                    
+                    socket.value.on('error', (data) => {
+                        showToast(data.error);
+                    });
+                };
+                
+                const fetchLeaderboard = async () => {
+                    leaderboardLoading.value = true;
+                    try {
+                        leaderboard.value = await api('/leaderboard');
+                    } catch (error) {
+                        console.error('Failed to fetch leaderboard:', error);
+                    } finally {
+                        leaderboardLoading.value = false;
+                    }
+                };
+                
+                const createRoom = async () => {
+                    loading.value = true;
+                    try {
+                        const data = await api('/rooms', {
+                            method: 'POST',
+                            body: JSON.stringify({ max_players: createRoomForm.value.maxPlayers }),
+                        });
+                        
+                        // 加入Socket房间
+                        socket.value.emit('join_room', { room_id: data.room_id });
+                        
+                        // 获取房间详情
+                        const room = await api(`/rooms/${data.room_id}`);
+                        roomInfo.value = room;
+                        currentPage.value = 'room';
+                        
+                        // 更新URL
+                        window.history.pushState({}, '', `/${data.room_id}`);
+                        
+                        showToast(`房间创建成功，ID: ${data.room_id}`);
+                    } catch (error) {
+                        showToast(error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const joinRoom = async () => {
+                    if (!joinRoomId.value || joinRoomId.value.length !== 4) {
+                        showToast('请输入有效的4位房间ID');
+                        return;
+                    }
+                    
+                    loading.value = true;
+                    try {
+                        const roomId = joinRoomId.value.toUpperCase();
+                        await api(`/rooms/${roomId}/join`, { method: 'POST' });
+                        
+                        // 加入Socket房间
+                        socket.value.emit('join_room', { room_id: roomId });
+                        
+                        // 获取房间详情
+                        const room = await api(`/rooms/${roomId}`);
+                        roomInfo.value = room;
+                        currentPage.value = 'room';
+                        
+                        // 更新URL
+                        window.history.pushState({}, '', `/${roomId}`);
+                        
+                        showToast('成功加入房间');
+                    } catch (error) {
+                        showToast(error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const leaveRoom = async () => {
+                    if (!roomInfo.value) return;
+                    
+                    try {
+                        await api(`/rooms/${roomInfo.value.id}/leave`, { method: 'POST' });
+                        socket.value.emit('leave_room', { room_id: roomInfo.value.id });
+                        roomInfo.value = null;
+                        gameState.value = null;
+                        currentPage.value = 'lobby';
+                        window.history.pushState({}, '', '/');
+                    } catch (error) {
+                        showToast(error.message);
+                    }
+                };
+                
+                const kickPlayer = async (playerId) => {
+                    if (!roomInfo.value) return;
+                    
+                    try {
+                        await api(`/rooms/${roomInfo.value.id}/kick`, {
+                            method: 'POST',
+                            body: JSON.stringify({ user_id: playerId }),
+                        });
+                        socket.value.emit('kick_player', {
+                            room_id: roomInfo.value.id,
+                            user_id: playerId,
+                        });
+                    } catch (error) {
+                        showToast(error.message);
+                    }
+                };
+                
+                const startGame = async () => {
+                    if (!roomInfo.value) return;
+                    
+                    loading.value = true;
+                    try {
+                        await api(`/rooms/${roomInfo.value.id}/start`, { method: 'POST' });
+                        socket.value.emit('start_game', { room_id: roomInfo.value.id });
+                    } catch (error) {
+                        showToast(error.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const selectNumber = (n) => {
+                    if (usedNumbers.value.includes(n)) return;
+                    selectedNumber.value = selectedNumber.value === n ? null : n;
+                };
+                
+                const handleCellClick = (row, col) => {
+                    if (gameState.value.phase === 'deployment') {
+                        // 部署阶段
+                        if (selectedNumber.value === null) return;
+                        
+                        if (myBoard.value[row][col] === null) {
+                            // 放置数字
+                            const newBoard = myBoard.value.map(r => [...r]);
+                            newBoard[row][col] = selectedNumber.value;
+                            
+                            // 更新本地状态
+                            const playerIndex = gameState.value.players.findIndex(p => p.id === user.value.id);
+                            if (playerIndex !== -1) {
+                                gameState.value.players[playerIndex].board = newBoard;
+                            }
+                            
+                            selectedNumber.value = null;
+                        }
+                    } else if (gameState.value.phase === 'action' && isMyTurn.value) {
+                        // 行动阶段
+                        if (myBoard.value[row][col] !== null) {
+                            selectedCell.value = { row, col };
+                        } else if (selectedCell.value) {
+                            // 尝试移动
+                            selectedCell.value = null;
+                        }
+                    }
+                };
+                
+                const canMoveTo = (row, col) => {
+                    if (!selectedCell.value) return false;
+                    
+                    const { row: selRow, col: selCol } = selectedCell.value;
+                    
+                    // 检查是否是前方格子
+                    if (selRow === 0) {
+                        // 最前排，只能移动到公共区域
+                        return false;
+                    }
+                    
+                    return row === selRow - 1 && col === selCol && myBoard.value[row][col] === null;
+                };
+                
+                const confirmDeployment = () => {
+                    if (!gameState.value || usedNumbers.value.length !== 10) return;
+                    
+                    socket.value.emit('deploy', {
+                        room_id: roomInfo.value.id,
+                        board: myBoard.value,
+                    });
+                };
+                
+                const executeMove = () => {
+                    if (!selectedCell.value || !gameState.value) return;
+                    
+                    socket.value.emit('action', {
+                        room_id: roomInfo.value.id,
+                        type: 'move',
+                        data: {
+                            row: selectedCell.value.row,
+                            col: selectedCell.value.col,
+                        },
+                    });
+                    
+                    selectedCell.value = null;
+                };
+                
+                const skipAction = () => {
+                    socket.value.emit('action', {
+                        room_id: roomInfo.value.id,
+                        type: 'skip',
+                        data: {},
+                    });
+                };
+                
+                const backToLobby = () => {
+                    gameEnded.value = null;
+                    gameState.value = null;
+                    roomInfo.value = null;
+                    currentPage.value = 'lobby';
+                    window.history.pushState({}, '', '/');
+                    fetchLeaderboard();
+                };
+                
+                const getPlayerColor = (playerId) => {
+                    const colors = [
+                        'linear-gradient(135deg, #6366f1, #4f46e5)',
+                        'linear-gradient(135deg, #22c55e, #16a34a)',
+                        'linear-gradient(135deg, #f59e0b, #d97706)',
+                        'linear-gradient(135deg, #ef4444, #dc2626)',
+                        'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                    ];
+                    const index = gameState.value?.players.findIndex(p => p.id === playerId) ?? 0;
+                    return colors[index % colors.length];
+                };
+                
+                const getPlayerNickname = (playerId) => {
+                    const player = gameState.value?.players.find(p => p.id === playerId);
+                    return player?.nickname || '';
+                };
+                
+                const countPlayerPieces = (player) => {
+                    let count = 0;
+                    if (player.board) {
+                        for (const row of player.board) {
+                            for (const cell of row) {
+                                if (cell !== null) count++;
+                            }
+                        }
+                    }
+                    // 加上公共区域的棋子
+                    count += gameState.value?.public_area?.filter(p => p.player_id === player.id).length || 0;
+                    return count;
+                };
+                
+                // 生命周期
+                onMounted(() => {
+                    checkAuth();
+                });
+                
+                onUnmounted(() => {
+                    if (socket.value) {
+                        socket.value.disconnect();
+                    }
+                });
+                
+                return {
+                    // 状态
+                    isAuthenticated,
+                    user,
+                    token,
+                    authTab,
+                    loading,
+                    toastMessage,
+                    
+                    // 表单
+                    loginForm,
+                    registerForm,
+                    createRoomForm,
+                    joinRoomId,
+                    
+                    // 页面
+                    currentPage,
+                    roomInfo,
+                    gameState,
+                    
+                    // 排行榜
+                    leaderboard,
+                    leaderboardLoading,
+                    
+                    // WebSocket
+                    connectionStatus,
+                    connectionStatusText,
+                    
+                    // 游戏
+                    selectedCell,
+                    selectedNumber,
+                    duelAnimation,
+                    gameEnded,
+                    
+                    // 计算属性
+                    myBoard,
+                    usedNumbers,
+                    myEliminatedNumbers,
+                    isMyTurn,
+                    currentPlayerNickname,
+                    otherPlayers,
+                    
+                    // 方法
+                    login,
+                    register,
+                    logout,
+                    createRoom,
+                    joinRoom,
+                    leaveRoom,
+                    kickPlayer,
+                    startGame,
+                    selectNumber,
+                    handleCellClick,
+                    canMoveTo,
+                    confirmDeployment,
+                    executeMove,
+                    skipAction,
+                    backToLobby,
+                    getPlayerColor,
+                    getPlayerNickname,
+                    countPlayerPieces,
+                };
+            },
+        }).mount('#app');
+
+        // 游戏逻辑工具类
+        const GameLogic = {
+            createEmptyBoard: () => [[null, null, null, null, null, null], [null, null, null, null, null, null], [null, null, null, null, null, null]],
+        };
+    </script>
+</body>
+</html>
