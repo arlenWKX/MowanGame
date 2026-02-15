@@ -1,6 +1,7 @@
 # 魔丸小游戏
 
 一个基于 Flask + SQLite + WebSocket 的策略推理类棋类游戏。
+GLM太好用辣！
 
 ## 游戏简介
 
@@ -29,14 +30,14 @@
 ### 方法一：使用启动脚本
 
 ```bash
-cd /home/z/my-project/game
+cd MowanGame
 ./run.sh [端口]  # 默认端口5000
 ```
 
 ### 方法二：手动启动
 
 ```bash
-cd /home/z/my-project/game/backend
+cd MowanGame/backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -75,7 +76,7 @@ python app.py
 ## 项目结构
 
 ```
-game/
+MowanGame/
 ├── backend/
 │   ├── app.py           # Flask主应用
 │   ├── requirements.txt # Python依赖
